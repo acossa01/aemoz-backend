@@ -30,11 +30,13 @@ app.use((req, res, next) => {
 
 // ========= MIDDLEWARE DE SEGURANÇA =========
 console.log('--- ATENÇÃO: CORS LIBERADO PARA TODOS (MODO DE TESTE) ---');
-app.use(cors({
-  origin: ['https://seu-frontend.vercel.app'], // 🔹 só aceita requisições desse domínio
+const corsOptions = {
+  origin: process.env.CORS_ORIGINS || 'http://localhost:5500',
   credentials: true,
   optionsSuccessStatus: 200
-}));
+};
+
+app.use(cors(corsOptions));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
