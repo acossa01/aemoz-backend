@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Participant {
+  id          String        @id @default(uuid()) @map("id") @db.Uuid
+  nome        String        @db.VarChar(255)
+  curso       String        @db.VarChar(255)
+  semestre    Int
+  email       String?       @unique @db.VarChar(320)
+  telefone    String?       @db.VarChar(20)
+  observacoes String?       @db.Text
+  ativo       Boolean       @default(true)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  groupMembers GroupMember[]
+
+  @@unique([nome, curso])
+  @@map("participants")
+}
+
+model Group {
+  id          String        @id @default(uuid()) @map("id") @db.Uuid
+  nome        String        @unique @db.VarChar(100)
+  cor         String        @db.VarChar(7)
+  descricao   String?       @db.Text
+  maxMembros  Int           @default(4) @map("max_membros")
+  ativo       Boolean       @default(true)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  groupMembers GroupMember[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id           String    @id @default(uuid()) @map("id") @db.Uuid
+  groupId      String    @map("group_id") @db.Uuid
+  participantId String    @unique @map("participant_id") @db.Uuid
+  position     Int       @default(1)
+  joinedAt     DateTime  @default(now()) @map("joined_at") @db.Timestamptz(6)
+  
+  group        Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  participant  Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@map("group_members")
+}
+
+model AdminSession {
+  id           String    @id @default(uuid()) @map("id") @db.Uuid
+  sessionToken String    @unique @map("session_token") @db.VarChar(255)
+  userAgent    String?   @map("user_agent") @db.Text
+  ipAddress    String?   @map("ip_address") @db.Inet
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastAccessed DateTime  @default(now()) @map("last_accessed") @db.Timestamptz(6)
+
+  @@map("admin_sessions")
+}
+
+model AuditLog {
+  id         String    @id @default(uuid()) @map("id") @db.Uuid
+  action     String    @db.VarChar(50)
+  tableName  String    @map("table_name") @db.VarChar(50)
+  recordId   String?   @map("record_id") @db.Uuid
+  oldValues  Json?     @map("old_values")
+  newValues  Json?     @map("new_values")
+  userInfo   Json?     @map("user_info")
+  ipAddress  String?   @map("ip_address") @db.Inet
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("audit_logs")
+}
+
+model Course {
+  id        String    @id @default(uuid()) @map("id") @db.Uuid
+  nome      String    @unique @db.VarChar(255)
+  codigo    String?   @unique @db.VarChar(20)
+  campus    String?   @db.VarChar(100)
+  ativo     Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("courses")
+}
+

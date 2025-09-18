@@ -1,0 +1,139 @@
+# Dockerfile
+FROM node:18-alpine
+
+# Instalar dependências do sistema
+RUN apk add --no-cache postgresql-client
+
+# Definir diretório de trabalho
+WORKDIR /app
+
+# Copiar arquivos de dependências
+COPY package*.json ./
+
+# Instalar dependências
+RUN npm ci --only=production && npm cache clean --force
+
+# Copiar código da aplicação
+COPY . .
+
+# Criar usuário não-root
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S aemoz -u 1001 -G nodejs
+
+# Mudar ownership dos arquivos
+RUN chown -R aemoz:nodejs /app
+USER aemoz
+
+# Expor porta
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node healthcheck.js
+
+# Comando de inicialização
+CMD ["npm", "start"]
+
+---
+
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # Banco de dados PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: aemoz_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aemoz_db
+      POSTGRES_USER: aemoz_user
+      POSTGRES_PASSWORD: aemoz_password_secure_2024
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aemoz_user -d aemoz_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - aemoz_network
+
+  # Aplicação Backend
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: aemoz_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://aemoz_user:aemoz_password_secure_2024@postgres:5432/aemoz_db
+      JWT_SECRET: ${JWT_SECRET:-sua_chave_jwt_super_secreta_aqui_minimum_32_chars}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-aemoz2025}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - aemoz_network
+    volumes:
+      - ./logs:/app/logs
+
+  # Nginx como proxy reverso (opcional para produção)
+  nginx:
+    image: nginx:alpine
+    container_name: aemoz_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+    networks:
+      - aemoz_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  aemoz_network:
+    driver: bridge
+
+---
+
+# docker-compose.dev.yml (para desenvolvimento)
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: aemoz_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aemoz_db_dev
+      POSTGRES_USER: aemoz_dev
+      POSTGRES_PASSWORD: dev_password_123
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - aemoz_dev_network
+
+volumes:
+  postgres_dev_data:
+
+networks:
+  aemoz_dev_network:
+    driver: bridge

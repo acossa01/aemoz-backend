@@ -1,0 +1,68 @@
+{
+  "name": "aemoz-backend",
+  "version": "1.0.0",
+  "description": "Backend para Sistema de Sorteio AEMOZ-UNILAB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:prisma": "node server_prisma.js",
+    "dev": "nodemon server.js",
+    "build": "npx prisma generate",
+    "postinstall": "prisma generate",
+    "dev:prisma": "nodemon server_prisma.js",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prisma:generate": "npx prisma generate",
+    "prisma:push": "npx prisma db push",
+    "prisma:studio": "npx prisma studio"
+  },
+  "keywords": [
+    "aemoz",
+    "unilab",
+    "sorteio",
+    "nodejs",
+    "postgresql"
+  ],
+  "author": "AEMOZ - Associação dos Estudantes Moçambicanos UNILAB",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^6.16.2",
+    "@vercel/node": "^2.3.0",
+    "bcrypt": "^5.1.1",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "express-rate-limit": "^6.11.2",
+    "helmet": "^7.2.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
+    "pdfkit": "^0.17.2",
+    "pg": "^8.16.3",
+    "serverless-http": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.2",
+    "eslint": "^8.57.1",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.10",
+    "prisma": "^6.16.2",
+    "supertest": "^6.3.4"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aemoz/sistema-sorteio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aemoz/sistema-sorteio/issues"
+  },
+  "homepage": "https://github.com/aemoz/sistema-sorteio#readme"
+}
